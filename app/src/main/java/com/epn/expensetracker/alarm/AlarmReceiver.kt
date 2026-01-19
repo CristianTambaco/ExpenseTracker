@@ -59,9 +59,9 @@ class AlarmReceiver : BroadcastReceiver() {
             .setContentTitle("¿Registraste tus gastos?")
             .setContentText("No olvides anotar lo que gastaste hoy")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_SOUND or NotificationCompat.DEFAULT_VIBRATE)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
 
         notificationManager.notify(NOTIFICATION_ID, notificacion)

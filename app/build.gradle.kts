@@ -13,8 +13,8 @@ android {
 
     defaultConfig {
         applicationId = "com.epn.expensetracker"
-        minSdk = 35
-        targetSdk = 36
+        minSdk = 26
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 

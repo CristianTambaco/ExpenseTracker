@@ -83,30 +83,67 @@ class ExpenseViewModel(
         _minutoRecordatorio.value = minuto
     }
 
+
+
+
+    fun cargarGastoParaEdicion(gasto: ExpenseEntity) {
+        _monto.value = gasto.monto.toString()
+        _descripcion.value = gasto.descripcion
+        _categoriaSeleccionada.value = gasto.categoria
+    }
+
     /**
      * Guarda un nuevo gasto y limpia el formulario.
      */
+    private var gastoEnEdicionId: Int? = null
+
+    fun iniciarEdicion(gasto: ExpenseEntity) {
+        gastoEnEdicionId = gasto.id
+        cargarGastoParaEdicion(gasto)
+    }
+
     fun guardarGasto() {
         val montoDouble = _monto.value.toDoubleOrNull()
+        if (montoDouble == null || montoDouble <= 0 || _descripcion.value.isBlank()) return
 
-        // Validación básica
-        if (montoDouble == null || montoDouble <= 0) return
-        if (_descripcion.value.isBlank()) return
-
-        // viewModelScope cancela automáticamente si el ViewModel se destruye
         viewModelScope.launch {
-            val nuevoGasto = ExpenseEntity(
-                monto = montoDouble,
-                descripcion = _descripcion.value.trim(),
-                categoria = _categoriaSeleccionada.value
-            )
-            repository.agregar(nuevoGasto)
-
-            // Limpiar formulario después de guardar
+            if (gastoEnEdicionId != null) {
+                // Actualizar
+                val gastoActualizado = ExpenseEntity(
+                    id = gastoEnEdicionId!!,
+                    monto = montoDouble,
+                    descripcion = _descripcion.value.trim(),
+                    categoria = _categoriaSeleccionada.value,
+                    fecha = System.currentTimeMillis() // opcional: mantener fecha original si prefieres
+                )
+                repository.actualizar(gastoActualizado)
+                gastoEnEdicionId = null
+            } else {
+                // Crear nuevo
+                val nuevoGasto = ExpenseEntity(
+                    monto = montoDouble,
+                    descripcion = _descripcion.value.trim(),
+                    categoria = _categoriaSeleccionada.value
+                )
+                repository.agregar(nuevoGasto)
+            }
+            // Limpiar formulario
             _monto.value = ""
             _descripcion.value = ""
+            _categoriaSeleccionada.value = "Comida"
         }
     }
+
+    fun cancelarEdicion() {
+        gastoEnEdicionId = null
+        _monto.value = ""
+        _descripcion.value = ""
+        _categoriaSeleccionada.value = "Comida"
+    }
+
+
+
+
 
     /**
      * Elimina un gasto de la base de datos.

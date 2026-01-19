@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -70,6 +71,11 @@ fun ExpenseScreen(
     val horaRecordatorio by viewModel.horaRecordatorio.collectAsState()
     val minutoRecordatorio by viewModel.minutoRecordatorio.collectAsState()
 
+    
+
+    var gastoEditando by remember { mutableStateOf<ExpenseEntity?>(null) }
+    val modoEdicion = gastoEditando != null // <-- ¡CORRECCIÓN!
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -97,7 +103,12 @@ fun ExpenseScreen(
                 onMontoChange = { viewModel.actualizarMonto(it) },
                 onDescripcionChange = { viewModel.actualizarDescripcion(it) },
                 onCategoriaChange = { viewModel.seleccionarCategoria(it) },
-                onGuardar = { viewModel.guardarGasto() }
+                onGuardar = { viewModel.guardarGasto() }, // <-- Solo una vez
+                modoEdicion = modoEdicion, // <-- Ya está definido
+                onCancelarEdicion = {
+                    gastoEditando = null
+                    viewModel.cancelarEdicion()
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -155,7 +166,11 @@ fun ExpenseScreen(
                 gastos.forEach { gasto ->
                     GastoItem(
                         gasto = gasto,
-                        onEliminar = { viewModel.eliminarGasto(gasto) }
+                        onEliminar = { viewModel.eliminarGasto(gasto) },
+                        onEditar = {
+                            gastoEditando = gasto
+                            viewModel.cargarGastoParaEdicion(gasto)
+                        }
                     )
                 }
             }
@@ -298,7 +313,9 @@ fun FormularioGasto(
     onMontoChange: (String) -> Unit,
     onDescripcionChange: (String) -> Unit,
     onCategoriaChange: (String) -> Unit,
-    onGuardar: () -> Unit
+    onGuardar: () -> Unit,
+    modoEdicion: Boolean,
+    onCancelarEdicion: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -377,6 +394,26 @@ fun FormularioGasto(
                 Text("Guardar")
             }
         }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = onGuardar,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(if (modoEdicion) "Actualizar" else "Guardar")
+            }
+            if (modoEdicion) {
+                Button(
+                    onClick = onCancelarEdicion,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        }
     }
 }
 
@@ -386,7 +423,8 @@ fun FormularioGasto(
 @Composable
 fun GastoItem(
     gasto: ExpenseEntity,
-    onEliminar: () -> Unit
+    onEliminar: () -> Unit,
+    onEditar: () -> Unit // <-- nuevo parámetro
 ) {
     val fechaFormateada = remember(gasto.fecha) {
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -401,28 +439,24 @@ fun GastoItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(12.dp)
+                .clickable { onEditar() }, // hacer toda la tarjeta clickeable para editar
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = gasto.descripcion,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Text(text = gasto.descripcion, style = MaterialTheme.typography.bodyLarge)
                 Text(
                     text = "${gasto.categoria} • $fechaFormateada",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
             Text(
                 text = "$${String.format("%.2f", gasto.monto)}",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-
             IconButton(onClick = onEliminar) {
                 Icon(
                     imageVector = Icons.Default.Delete,
