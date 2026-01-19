@@ -10,11 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel para la pantalla principal.
- *
- * Mantiene el estado de la UI y coordina las operaciones con el repositorio.
- */
 class ExpenseViewModel(
     private val repository: ExpenseRepository,
     recordatorioActivoInicial: Boolean = true,
@@ -22,7 +17,7 @@ class ExpenseViewModel(
     minutoRecordatorioInicial: Int = 0
 ) : ViewModel() {
 
-    // Estado del formulario de nuevo gasto
+    // Estado del formulario
     private val _monto = MutableStateFlow("")
     val monto: StateFlow<String> = _monto.asStateFlow()
 
@@ -32,30 +27,27 @@ class ExpenseViewModel(
     private val _categoriaSeleccionada = MutableStateFlow("Comida")
     val categoriaSeleccionada: StateFlow<String> = _categoriaSeleccionada.asStateFlow()
 
-    // Estado del recordatorio (cargado desde preferencias)
+    // Estado de edición
+    private var gastoEnEdicionId: Int? = null
+
+    // Recordatorio
     private val _recordatorioActivo = MutableStateFlow(recordatorioActivoInicial)
     val recordatorioActivo: StateFlow<Boolean> = _recordatorioActivo.asStateFlow()
 
-    // Hora del recordatorio (cargado desde preferencias)
     private val _horaRecordatorio = MutableStateFlow(horaRecordatorioInicial)
     val horaRecordatorio: StateFlow<Int> = _horaRecordatorio.asStateFlow()
 
     private val _minutoRecordatorio = MutableStateFlow(minutoRecordatorioInicial)
     val minutoRecordatorio: StateFlow<Int> = _minutoRecordatorio.asStateFlow()
 
-    // Lista de gastos (viene directo del repositorio)
+    // Datos
     val gastos = repository.todosLosGastos
-
-    // Total general
     val total = repository.totalGeneral
-
-    // Categorías disponibles
     val categorias = listOf("Comida", "Transporte", "Entretenimiento", "Servicios", "Otros")
 
-    // Funciones para actualizar el formulario
+    // Formulario
     fun actualizarMonto(valor: String) {
-        // Solo permitimos números y un punto decimal
-        if (valor.isEmpty() || valor.matches(Regex("^\\d*\\.?\\d*$"))) {
+        if (valor.isEmpty() || valor.matches(Regex("^\\d*\\.?\\d*\$"))) {
             _monto.value = valor
         }
     }
@@ -68,58 +60,40 @@ class ExpenseViewModel(
         _categoriaSeleccionada.value = categoria
     }
 
-    /**
-     * Activa o desactiva el recordatorio.
-     */
-    fun cambiarEstadoRecordatorio(activo: Boolean) {
-        _recordatorioActivo.value = activo
-    }
-
-    /**
-     * Actualiza la hora del recordatorio.
-     */
-    fun actualizarHoraRecordatorio(hora: Int, minuto: Int) {
-        _horaRecordatorio.value = hora
-        _minutoRecordatorio.value = minuto
-    }
-
-
-
-
+    // Edición
     fun cargarGastoParaEdicion(gasto: ExpenseEntity) {
         _monto.value = gasto.monto.toString()
         _descripcion.value = gasto.descripcion
         _categoriaSeleccionada.value = gasto.categoria
-    }
-
-    /**
-     * Guarda un nuevo gasto y limpia el formulario.
-     */
-    private var gastoEnEdicionId: Int? = null
-
-    fun iniciarEdicion(gasto: ExpenseEntity) {
         gastoEnEdicionId = gasto.id
-        cargarGastoParaEdicion(gasto)
     }
 
+    fun cancelarEdicion() {
+        _monto.value = ""
+        _descripcion.value = ""
+        _categoriaSeleccionada.value = "Comida"
+        gastoEnEdicionId = null
+    }
+
+    // Guardar (crear o actualizar)
     fun guardarGasto() {
         val montoDouble = _monto.value.toDoubleOrNull()
         if (montoDouble == null || montoDouble <= 0 || _descripcion.value.isBlank()) return
 
         viewModelScope.launch {
             if (gastoEnEdicionId != null) {
-                // Actualizar
+                // ACTUALIZAR
                 val gastoActualizado = ExpenseEntity(
                     id = gastoEnEdicionId!!,
                     monto = montoDouble,
                     descripcion = _descripcion.value.trim(),
                     categoria = _categoriaSeleccionada.value,
-                    fecha = System.currentTimeMillis() // opcional: mantener fecha original si prefieres
+                    fecha = System.currentTimeMillis()
                 )
                 repository.actualizar(gastoActualizado)
                 gastoEnEdicionId = null
             } else {
-                // Crear nuevo
+                // CREAR
                 val nuevoGasto = ExpenseEntity(
                     monto = montoDouble,
                     descripcion = _descripcion.value.trim(),
@@ -127,47 +101,37 @@ class ExpenseViewModel(
                 )
                 repository.agregar(nuevoGasto)
             }
-            // Limpiar formulario
+            // Limpiar
             _monto.value = ""
             _descripcion.value = ""
             _categoriaSeleccionada.value = "Comida"
         }
     }
 
-    fun cancelarEdicion() {
-        gastoEnEdicionId = null
-        _monto.value = ""
-        _descripcion.value = ""
-        _categoriaSeleccionada.value = "Comida"
-    }
-
-
-
-
-
-    /**
-     * Elimina un gasto de la base de datos.
-     */
+    // Eliminar
     fun eliminarGasto(gasto: ExpenseEntity) {
         viewModelScope.launch {
             repository.eliminar(gasto)
         }
     }
+
+    // Recordatorio
+    fun cambiarEstadoRecordatorio(activo: Boolean) {
+        _recordatorioActivo.value = activo
+    }
+
+    fun actualizarHoraRecordatorio(hora: Int, minuto: Int) {
+        _horaRecordatorio.value = hora
+        _minutoRecordatorio.value = minuto
+    }
 }
 
-/**
- * Factory para crear el ViewModel con sus dependencias.
- *
- * Esto es necesario porque ViewModel no puede recibir parámetros
- * en su constructor directamente.
- */
 class ExpenseViewModelFactory(
     private val repository: ExpenseRepository,
     private val recordatorioActivo: Boolean,
     private val horaRecordatorio: Int,
     private val minutoRecordatorio: Int
 ) : ViewModelProvider.Factory {
-
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ExpenseViewModel::class.java)) {

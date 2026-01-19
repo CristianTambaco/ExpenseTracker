@@ -50,31 +50,24 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/**
- * Pantalla principal de la aplicación.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpenseScreen(
     viewModel: ExpenseViewModel,
     onRecordatorioChange: (Boolean, Int, Int) -> Unit
 ) {
-    // Estados del formulario
     val monto by viewModel.monto.collectAsState()
     val descripcion by viewModel.descripcion.collectAsState()
     val categoriaSeleccionada by viewModel.categoriaSeleccionada.collectAsState()
     val gastos by viewModel.gastos.collectAsState(initial = emptyList())
     val total by viewModel.total.collectAsState(initial = 0.0)
 
-    // Estados del recordatorio
     val recordatorioActivo by viewModel.recordatorioActivo.collectAsState()
     val horaRecordatorio by viewModel.horaRecordatorio.collectAsState()
     val minutoRecordatorio by viewModel.minutoRecordatorio.collectAsState()
 
-    
-
     var gastoEditando by remember { mutableStateOf<ExpenseEntity?>(null) }
-    val modoEdicion = gastoEditando != null // <-- ¡CORRECCIÓN!
+    val modoEdicion = gastoEditando != null
 
     Scaffold(
         topBar = {
@@ -86,7 +79,6 @@ fun ExpenseScreen(
             )
         }
     ) { paddingValues ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -94,7 +86,6 @@ fun ExpenseScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Formulario para agregar gasto
             FormularioGasto(
                 monto = monto,
                 descripcion = descripcion,
@@ -103,8 +94,8 @@ fun ExpenseScreen(
                 onMontoChange = { viewModel.actualizarMonto(it) },
                 onDescripcionChange = { viewModel.actualizarDescripcion(it) },
                 onCategoriaChange = { viewModel.seleccionarCategoria(it) },
-                onGuardar = { viewModel.guardarGasto() }, // <-- Solo una vez
-                modoEdicion = modoEdicion, // <-- Ya está definido
+                onGuardar = { viewModel.guardarGasto() },
+                modoEdicion = modoEdicion,
                 onCancelarEdicion = {
                     gastoEditando = null
                     viewModel.cancelarEdicion()
@@ -113,7 +104,6 @@ fun ExpenseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Configuración del recordatorio
             ConfiguracionRecordatorio(
                 activo = recordatorioActivo,
                 hora = horaRecordatorio,
@@ -132,7 +122,6 @@ fun ExpenseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Total gastado
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -148,12 +137,7 @@ fun ExpenseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Lista de gastos
-            Text(
-                text = "Historial",
-                style = MaterialTheme.typography.titleMedium
-            )
-
+            Text(text = "Historial", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
             if (gastos.isEmpty()) {
@@ -178,9 +162,6 @@ fun ExpenseScreen(
     }
 }
 
-/**
- * Tarjeta de configuración del recordatorio.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfiguracionRecordatorio(
@@ -199,32 +180,18 @@ fun ConfiguracionRecordatorio(
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Recordatorio diario",
-                style = MaterialTheme.typography.titleMedium
-            )
-
+            Text(text = "Recordatorio diario", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Activar notificación",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Switch(
-                    checked = activo,
-                    onCheckedChange = onActivoChange
-                )
+                Text(text = "Activar notificación", style = MaterialTheme.typography.bodyMedium)
+                Switch(checked = activo, onCheckedChange = onActivoChange)
             }
-
-            // Selector de hora (solo visible si está activo)
             if (activo) {
                 Spacer(modifier = Modifier.height(8.dp))
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -232,11 +199,7 @@ fun ConfiguracionRecordatorio(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Hora del recordatorio",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
+                    Text(text = "Hora del recordatorio", style = MaterialTheme.typography.bodyMedium)
                     val horaFormateada = String.format("%02d:%02d", hora, minuto)
                     Text(
                         text = horaFormateada,
@@ -248,7 +211,6 @@ fun ConfiguracionRecordatorio(
         }
     }
 
-    // Diálogo con el TimePicker
     if (mostrarTimePicker) {
         TimePickerDialog(
             horaInicial = hora,
@@ -262,9 +224,6 @@ fun ConfiguracionRecordatorio(
     }
 }
 
-/**
- * Diálogo con el TimePicker de Material 3.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimePickerDialog(
@@ -282,27 +241,18 @@ fun TimePickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Seleccionar hora") },
-        text = {
-            TimePicker(state = timePickerState)
-        },
+        text = { TimePicker(state = timePickerState) },
         confirmButton = {
-            TextButton(
-                onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }
-            ) {
+            TextButton(onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }) {
                 Text("Aceptar")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
     )
 }
 
-/**
- * Formulario para ingresar un nuevo gasto.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioGasto(
@@ -328,11 +278,10 @@ fun FormularioGasto(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Nuevo Gasto",
+                text = if (modoEdicion) "Editar Gasto" else "Nuevo Gasto",
                 style = MaterialTheme.typography.titleMedium
             )
 
-            // Campo de monto
             OutlinedTextField(
                 value = monto,
                 onValueChange = onMontoChange,
@@ -343,7 +292,6 @@ fun FormularioGasto(
                 singleLine = true
             )
 
-            // Campo de descripción
             OutlinedTextField(
                 value = descripcion,
                 onValueChange = onDescripcionChange,
@@ -352,7 +300,6 @@ fun FormularioGasto(
                 singleLine = true
             )
 
-            // Selector de categoría (Dropdown)
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = it }
@@ -369,7 +316,6 @@ fun FormularioGasto(
                         .fillMaxWidth()
                         .menuAnchor()
                 )
-
                 ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
@@ -385,17 +331,12 @@ fun FormularioGasto(
                     }
                 }
             }
-
-            // Botón guardar
-            Button(
-                onClick = onGuardar,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Guardar")
-            }
         }
+
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
@@ -417,14 +358,11 @@ fun FormularioGasto(
     }
 }
 
-/**
- * Muestra un gasto individual en la lista.
- */
 @Composable
 fun GastoItem(
     gasto: ExpenseEntity,
     onEliminar: () -> Unit,
-    onEditar: () -> Unit // <-- nuevo parámetro
+    onEditar: () -> Unit
 ) {
     val fechaFormateada = remember(gasto.fecha) {
         val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -440,7 +378,7 @@ fun GastoItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
-                .clickable { onEditar() }, // hacer toda la tarjeta clickeable para editar
+                .clickable { onEditar() },
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
