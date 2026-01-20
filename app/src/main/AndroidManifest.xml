@@ -2,11 +2,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
-    <uses-permission android:name="android.permission.VIBRATE" />
-
+        <!-- Permisos de notificaciones -->
+        <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+        
+        <!-- Permisos de alarmas exactas -->
+        <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+        <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+        
+        <!-- Permiso de vibración -->
+        <uses-permission android:name="android.permission.VIBRATE" />
+        
+        <!-- Permiso para reprogramar alarmas después de reinicio -->
+        <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+        
+        <!-- Permiso para mantener el dispositivo despierto mientras procesa la alarma -->
+        <uses-permission android:name="android.permission.WAKE_LOCK" />
+        
+        <!-- Solicitar que la app no sea restringida por optimización de batería -->
+        <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
 
     <application
@@ -30,14 +43,29 @@
             </intent-filter>
         </activity>
 
-
+        <!-- Receiver para las alarmas de recordatorio -->
         <receiver
             android:name=".alarm.AlarmReceiver"
             android:enabled="true"
-            android:exported="true" />
-
-
-
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.epn.expensetracker.ALARM_TRIGGER" />
+            </intent-filter>
+        </receiver>
+        
+        <!-- Receiver para reprogramar alarmas después de reiniciar el dispositivo -->
+        <receiver
+            android:name=".alarm.BootReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
