@@ -671,14 +671,16 @@ fun SelectorSonido(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
+
+//            Icon(
+//                imageVector = Icons.Default.Notifications,
+//                contentDescription = null,
+//                tint = MaterialTheme.colorScheme.primary
+//            )
+
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Sonido de notificación",
+                text = "Sonido",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
